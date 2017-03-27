@@ -1,22 +1,24 @@
 # imports from multcomp::glht
 # imports from PMCMR:posthoc.kruskal.nemenyi.test
 
-easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE){
+easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE,t=FALSE){
 
   ###################################################
   ## function of numeric variables from two groups ##
   ###################################################
 
-  t.wilcox.des <- function(nc.g=nc.g,nc.n=nc.n,dataInS=dataIn){
+  t.wilcox.des <- function(nc.g=nc.g,nc.n=nc.n,dataInS=dataIn,t2=t){
+
+    if(!t2){
 
     t.wilcox.single <- function(g=nc.g,i,data=dataInS){
       data[,i]=as.numeric(data[,i])
       m0=mean(data[,i],na.rm=TRUE)
       s0=sd(data[,i],na.rm=TRUE)
-      ms0=paste(round(m0,3),"+/-",round(s0,3))
+      ms0=paste(round(m0,3),"+/-",round(s0,3),sep="")
       m=aggregate(data[,i],by=list(data[,g]),mean,na.rm=TRUE)
       s=aggregate(data[,i],by=list(data[,g]),sd,na.rm=TRUE)
-      rst.single=paste(round(m[,2],3),"+/-",round(s[,2],3))
+      rst.single=paste(round(m[,2],3),"+/-",round(s[,2],3),sep="")
       shapiro1=shapiro.test(data[,i][data[,g]==levels(data[,g])[1]])
       shapiro2=shapiro.test(data[,i][data[,g]==levels(data[,g])[2]])
       shapiro=min(shapiro1$p.value,shapiro2$p.value)
@@ -40,10 +42,35 @@ easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE
       return(rst.single)
     }
 
-    n.rst=t.wilcox.single(i=nc.n[1],data=dataIn)
+    }#if(!t2)
+
+    if(t2){
+
+      t.wilcox.single <- function(g=nc.g,i,data=dataInS){
+        data[,i]=as.numeric(data[,i])
+        m0=mean(data[,i],na.rm=TRUE)
+        s0=sd(data[,i],na.rm=TRUE)
+        ms0=paste(round(m0,3),"+/-",round(s0,3),sep="")
+        m=aggregate(data[,i],by=list(data[,g]),mean,na.rm=TRUE)
+        s=aggregate(data[,i],by=list(data[,g]),sd,na.rm=TRUE)
+        rst.single=paste(round(m[,2],3),"+/-",round(s[,2],3),sep="")
+        temp=t.test(data[,i]~data[,g],var.equal=TRUE)
+        s=c("t test",round(temp$statistic,3))
+        p=round(temp$p.value,3)
+        rst.single=c(ms0,rst.single,s,p)
+        rst.single=data.frame(matrix(rst.single,nrow=1))
+        names(rst.single)=c("total",levels(data[,nc.g]),"method","statistic","p.value")
+        row.names(rst.single)=names(data)[i]
+        return(rst.single)
+      }
+
+    }#if(t2)
+
+
+    n.rst=t.wilcox.single(i=nc.n[1],data=dataInS)
 
     if(length(nc.n)==1){n.rst=n.rst}else{
-      for(j in nc.n[2:length(nc.n)]){n.rst=rbind(n.rst,t.wilcox.single(i=j,data=dataIn))}
+      for(j in nc.n[2:length(nc.n)]){n.rst=rbind(n.rst,t.wilcox.single(i=j,data=dataInS))}
     }
 
     n.rst$p.value=as.numeric(as.character(n.rst$p.value))

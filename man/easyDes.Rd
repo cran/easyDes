@@ -6,11 +6,11 @@
   This package provides an easy way to conduct the descriptive analysis.
   1. Both numeric and factor variables can be handled. For numeric variables, normality test will be applied to choose the parametric and nonparametric test.
   2. Both two or more groups can be handled. For groups more than two, the post hoc test will be applied, 'Tukey' for the numeric variables and 'FDR' for the factor variables.
-  3. ANOVA or Fisher test can be forced to apply.
+  3. T test, ANOVA or Fisher test can be forced to apply.
 }
 \keyword{Descriptive analysis}
 \usage{
-easyDes(nc.g,nc.n,nc.f,dataIn,fisher,aov)
+easyDes(nc.g,nc.n,nc.f,dataIn,fisher,aov,t)
 }
 \arguments{
   \item{nc.g}{integer, the column number of the grouping variable, length of 'nc.g' must be 1}
@@ -19,6 +19,7 @@ easyDes(nc.g,nc.n,nc.f,dataIn,fisher,aov)
   \item{dataIn}{data frame including variables above}
   \item{fisher}{logic, whether to apply Fisher test by force}
   \item{aov}{logic, whether to apply ANOVA test by force}
+  \item{t}{logic, whether to apply T test by force}
 }
 \value{
   \item{total}{the descriptive statistic for all data}
@@ -32,6 +33,9 @@ Zhicheng Du<dgdzc@hotmail.com>, Yuantao Hao<haoyt@mail.sysu.edu.cn>
 }
 \note{
 Please feel free to contact us, if you have any advice and find any bug!
+
+Update description:
+Version 2.0: 1. T test can be forced to apply.
 }
 \seealso{
 nothing
