@@ -10,16 +10,17 @@
 }
 \keyword{Descriptive analysis}
 \usage{
-easyDes(nc.g,nc.n,nc.f,dataIn,fisher,aov,t)
+easyDes(nc.g,nc.n,nc.f,dataIn,fisher,aov,t,digit.p)
 }
 \arguments{
   \item{nc.g}{integer, the column number of the grouping variable, length of 'nc.g' must be 1}
   \item{nc.n}{numeric vector, the column number of the numeric variable, length of 'nc.n' can be more than 1}
   \item{nc.f}{numeric vector, the column number of the factor variable, length of 'nc.n' can be more than 1}
   \item{dataIn}{data frame including variables above}
-  \item{fisher}{logic, whether to apply Fisher test by force}
-  \item{aov}{logic, whether to apply ANOVA test by force}
-  \item{t}{logic, whether to apply T test by force}
+  \item{fisher}{logic, whether to apply Fisher test by force, the default is 'TRUE'}
+  \item{aov}{logic, whether to apply ANOVA test by force, the default is 'FALSE'}
+  \item{t}{logic, whether to apply T test by force, the default is 'FALSE'}
+  \item{digit.p}{integer, the number of decimal digits of the propotion for the factor variable, the default is 2}
 }
 \value{
   \item{total}{the descriptive statistic for all data}
@@ -35,7 +36,10 @@ Zhicheng Du<dgdzc@hotmail.com>, Yuantao Hao<haoyt@mail.sysu.edu.cn>
 Please feel free to contact us, if you have any advice and find any bug!
 
 Update description:
+
 Version 2.0: 1. T test can be forced to apply.
+
+Version 3.0: 1. Fixing the wrong colnames in chi-squre test. 2. Limiting the number of the decimal digits of the statistic in chi-squre test to three. 3. The number of decimal digits of the propotion for the factor variables can be set free.
 }
 \seealso{
 nothing
@@ -48,7 +52,7 @@ fx1=rep(c(1:3),20)
 fx2=rep(c(1:5),12)
 data=data.frame(group,nx1,nx2,fx1,fx2)
 
-easyDes(nc.g=1,nc.n=2:3,nc.f=4:5,dataIn=data,fisher=TRUE,aov=FALSE)
-easyDes(nc.g=4,nc.n=2:3,nc.f=c(5,5),dataIn=data,fisher=TRUE,aov=FALSE)
+easyDes(nc.g=1,nc.n=2:3,nc.f=4:5,dataIn=data,fisher=TRUE,aov=FALSE,t=FALSE,digit.p=2)
+easyDes(nc.g=4,nc.n=2:3,nc.f=c(5,5),dataIn=data,fisher=TRUE,aov=FALSE,t=FALSE,digit.p=2)
 }
 

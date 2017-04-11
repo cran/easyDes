@@ -1,7 +1,7 @@
 # imports from multcomp::glht
 # imports from PMCMR:posthoc.kruskal.nemenyi.test
 
-easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE,t=FALSE){
+easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE,t=FALSE,digit.p=2){
 
   ###################################################
   ## function of numeric variables from two groups ##
@@ -75,56 +75,6 @@ easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE
 
     n.rst$p.value=as.numeric(as.character(n.rst$p.value))
     return(n.rst)
-  }
-
-  ##################################################
-  ## function of factor variables from two groups ##
-  ##################################################
-
-  fisher.des=function(nc.g=nc.g,nc.f=nc.f,dataInS=dataIn,ftestS=fisher){
-
-    fisher.des.single=function(g=nc.g,i,data=dataInS,test=ftestS){
-      data[,i]=as.factor(data[,i])
-      t=table(data[,i])
-      p=prop.table(t)
-      p=round(p*100,2)
-      rst0=paste(t," (",p,")",sep="")
-      t=table(data[,i],data[,g])
-      p=prop.table(t,2)
-      p=round(p*100,2)
-      rst=data.frame(matrix(paste(t," (",p,")",sep=""),ncol=length(levels(data[,g]))))
-      if(test){
-        fisher=fisher.test(t)
-        p=round(fisher$p.value,3)
-        method=c("Fisher test",rep(NA,nrow(t)-1))
-        statistic=rep(NA,nrow(t))
-        p=c(p,rep(NA,nrow(t)-1))
-        rst=cbind(rst0,rst,method,statistic,p)
-        names(rst)=c("total",levels(data[,g]),"method","statistic","p.value")
-        row.names(rst)=paste(names(data)[i],levels(data[,i]))}
-      if(!test){
-        chisq=chisq.test(t)
-        p=round(chisq$p.value,3)
-        method=c("Chi-square test",rep(NA,nrow(t)-1))
-        statistic=rep(NA,nrow(t))
-        p=c(p,rep(NA,nrow(t)-1))
-        rst=cbind(rst0,rst,method,statistic,p)
-        names.rst=paste("group",1:length(levels(data[,g])),sep="")
-        names(rst)=c("total",names.rst,"method","statistic","p.value")
-        row.names(rst)=paste(names(data)[i],levels(data[,i]))}
-
-      return(rst)
-    }
-
-    f.rst=fisher.des.single(g=nc.g,i=nc.f[1],data=dataInS,test=ftestS)
-
-    if(length(nc.f)==1){f.rst=f.rst}else{
-      for(jj in 2:length(nc.f)){
-        f.rst=rbind(f.rst,fisher.des.single(g=nc.g,i=nc.f[jj],data=dataInS,test=ftestS))
-      }
-    }
-
-    return(f.rst)
   }
 
   ####################################################
@@ -265,22 +215,22 @@ easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE
     }#if(!aov)
   }#aov.kru
 
-  ####################################################
-  ## function of factor variables from more groups ##
-  ####################################################
+  ##########################################################
+  ## function of factor variables from two or more groups ##
+  ##########################################################
 
-  fisher.des.m=function(nc.g=nc.g,nc.f=nc.f,dataInS=dataIn,ftestS=fisher){
+  fisher.des=function(nc.g=nc.g,nc.f=nc.f,dataInS=dataIn,ftestS=fisher,digit.p2=digit.p){
 
-    fisher.des.msingle=function(g=nc.g,i,data=dataInS,test=ftestS){
+    fisher.des.single=function(g=nc.g,i,data=dataInS,test=ftestS,digit.p3=digit.p2){
       data[,g]=as.factor(data[,g])
       data[,i]=as.factor(data[,i])
       t=table(data[,i])
       p=prop.table(t)
-      p=round(p*100,2)
+      p=round(p*10^digit.p3,2)
       rst0=paste(t," (",p,")",sep="")
       t=table(data[,i],data[,g])
       p=prop.table(t,2)
-      p=round(p*100,2)
+      p=round(p*10^digit.p3,2)
       rst=data.frame(matrix(paste(t," (",p,")",sep=""),ncol=length(levels(data[,g]))))
       if(test){
         fisher=fisher.test(t)
@@ -292,58 +242,60 @@ easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE
         names(rst)=c("total",levels(data[,g]),"method","statistic","p.value")
         rownames(rst)=paste(names(data)[i],levels(data[,i]))
 
-        pairwiseComb=combn(levels(data[,g]),2)
-        results=matrix(NA,ncol=ncol(pairwiseComb),nrow=nrow(t))
-        rownames(results)=rownames(rst)
-        colnames(results)=apply(pairwiseComb,2,function(x){paste(x[1],"_vs_",x[2],sep="")})
-        for(j in seq(ncol(pairwiseComb))){
-          tempCol1=pairwiseComb[1,j]
-          tempCol2=pairwiseComb[2,j]
-          cols=c(tempCol1, tempCol2)
-          tempMat=rbind(t[,cols])
-          tempFisher=fisher.test(tempMat,alternative="two.sided")
-          results[1,colnames(results)[j]]=tempFisher$p.value
-        }#for(j in seq(ncol(pairwiseComb)))
-        results[1,]=round(p.adjust(results[1,],method="fdr"),3)
-
-        rst=cbind(rst,results)
+        if(length(levels(data[,g]))>2){
+          pairwiseComb=combn(levels(data[,g]),2)
+          results=matrix(NA,ncol=ncol(pairwiseComb),nrow=nrow(t))
+          rownames(results)=rownames(rst)
+          colnames(results)=apply(pairwiseComb,2,function(x){paste(x[1],"_vs_",x[2],sep="")})
+          for(j in seq(ncol(pairwiseComb))){
+            tempCol1=pairwiseComb[1,j]
+            tempCol2=pairwiseComb[2,j]
+            cols=c(tempCol1, tempCol2)
+            tempMat=rbind(t[,cols])
+            tempFisher=fisher.test(tempMat,alternative="two.sided")
+            results[1,colnames(results)[j]]=tempFisher$p.value
+          }#for(j in seq(ncol(pairwiseComb)))
+          results[1,]=round(p.adjust(results[1,],method="fdr"),3)
+          rst=cbind(rst,results)
+        }#if(length(levels(data[,g]))>2)
 
       }#if(test)
       if(!test){
         chisq=chisq.test(t)
         p=round(chisq$p.value,3)
         method=c("Chi-square test",rep(NA,nrow(t)-1))
-        statistic=c(chisq$statistic,rep(NA,nrow(t)-1))
+        statistic=c(round(chisq$statistic,3),rep(NA,nrow(t)-1))
         p=c(p,rep(NA,nrow(t)-1))
         rst=cbind(rst0,rst,method,statistic,p)
         names(rst)=c("total",levels(data[,g]),"method","statistic","p.value")
         rownames(rst)=paste(names(data)[i],levels(data[,i]))
 
-        pairwiseComb=combn(levels(data[,g]),2)
-        results=matrix(NA,ncol=ncol(pairwiseComb),nrow=nrow(t))
-        rownames(results)=rownames(rst)
-        colnames(results)=apply(pairwiseComb,2,function(x){paste(x[1],"_vs_",x[2],sep="")})
-        for(j in seq(ncol(pairwiseComb))){
-          tempCol1 <- pairwiseComb[1,j]
-          tempCol2 <- pairwiseComb[2,j]
-          cols <- c(tempCol1, tempCol2)
-          tempMat=rbind(t[,cols])
-          tempChisq=chisq.test(tempMat)
-          results[1,colnames(results)[j]] <- tempChisq$p.value
-        }#for(j in seq(ncol(pairwiseComb)))
-        results[1,]=round(p.adjust(results[1,], method="fdr"),3)
-
-        rst=cbind(rst,results)
+        if(length(levels(data[,g]))>2){
+          pairwiseComb=combn(levels(data[,g]),2)
+          results=matrix(NA,ncol=ncol(pairwiseComb),nrow=nrow(t))
+          rownames(results)=rownames(rst)
+          colnames(results)=apply(pairwiseComb,2,function(x){paste(x[1],"_vs_",x[2],sep="")})
+          for(j in seq(ncol(pairwiseComb))){
+            tempCol1 <- pairwiseComb[1,j]
+            tempCol2 <- pairwiseComb[2,j]
+            cols <- c(tempCol1, tempCol2)
+            tempMat=rbind(t[,cols])
+            tempChisq=chisq.test(tempMat)
+            results[1,colnames(results)[j]] <- tempChisq$p.value
+          }#for(j in seq(ncol(pairwiseComb)))
+          results[1,]=round(p.adjust(results[1,], method="fdr"),3)
+          rst=cbind(rst,results)
+        }#if(length(levels(data[,g]))>2)
 
       }#if(!test)
       return(rst)
-    }#fisher.des.msingle
+    }#fisher.des.single
 
-    f.rst=fisher.des.msingle(g=nc.g,i=nc.f[1],data=dataInS,test=ftestS)
+    f.rst=fisher.des.single(g=nc.g,i=nc.f[1],data=dataInS,test=ftestS)
 
     if(length(nc.f)==1){f.rst=f.rst}else{
       for(jj in 2:length(nc.f)){
-        f.rst=rbind(f.rst,fisher.des.msingle(g=nc.g,i=nc.f[jj],data=dataInS,test=ftestS))
+        f.rst=rbind(f.rst,fisher.des.single(g=nc.g,i=nc.f[jj],data=dataInS,test=ftestS))
       }
     }
     for(i in 1:ncol(f.rst)){f.rst[,i]=as.character(f.rst[,i])}
@@ -361,7 +313,7 @@ easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE
     if(length(levels(dataIn[,nc.g]))==2){
 
       if(is.null(nc.n)){message("There is not any value of 'nc.n'!");n.rst=NULL}else{
-        n.rst=t.wilcox.des(nc.g=nc.g,nc.n=nc.n,dataInS=dataIn)
+        n.rst=t.wilcox.des(nc.g=nc.g,nc.n=nc.n,dataInS=dataIn,t2=t)
       }
 
       if(is.null(nc.f)){message("There is not any value of 'nc.f'!");f.rst=NULL}else{
@@ -381,7 +333,7 @@ easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE
       }
 
       if(is.null(nc.f)){message("There is not any value of 'nc.f'!");f.rst=NULL}else{
-        f.rst=fisher.des.m(nc.g=nc.g,nc.f=nc.f,dataInS=dataIn,ftestS=fisher)
+        f.rst=fisher.des(nc.g=nc.g,nc.f=nc.f,dataInS=dataIn,ftestS=fisher)
       }
 
       if(is.null(n.rst)){return(f.rst)}

@@ -1,7 +1,7 @@
 Package: easyDes
 Type: Package
 Title: An Easy Way to Descriptive Analysis
-Version: 2.0
+Version: 3.0
 Author: Zhicheng Du, Yuantao Hao
 Maintainer: Zhicheng Du<dgdzc@hotmail.com>
 Description: 
@@ -11,10 +11,10 @@ Description:
   2. Both two or more groups can be handled. For groups more than two, the post hoc test will be applied, 'Tukey' for the numeric variables and 'FDR' for the factor variables.
   3. T test, ANOVA or Fisher test can be forced to apply.
 License: GPL-3
-Depends: R (>= 3.3.2)
+Depends: R (>= 3.3.3)
 Imports: PMCMR, multcomp, stats, utils
 LazyData: TRUE
 NeedsCompilation: no
-Packaged: 2017-03-24 08:26:56 UTC; dgdzc
+Packaged: 2017-04-11 16:37:14 UTC; dgdzc
 Repository: CRAN
-Date/Publication: 2017-03-27 13:59:45 UTC
+Date/Publication: 2017-04-11 21:14:44 UTC
