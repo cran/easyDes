@@ -1,42 +1,71 @@
 # imports from multcomp::glht
 # imports from PMCMR:posthoc.kruskal.nemenyi.test
+# imports from PMCMRplus:kwAllPairsNemenyiTest
 
-easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE,t=FALSE,digit.p=2){
+easyDes=function(
+  nc.g=NULL,
+  nc.n=NULL,
+  nc.f=NULL,
+  dataIn=data,
+  fisher=TRUE,
+  aov=FALSE,
+  t=FALSE,
+  mean=FALSE,
+  mcp.stat=FALSE){
 
   ###################################################
   ## function of numeric variables from two groups ##
   ###################################################
 
-  t.wilcox.des <- function(nc.g=nc.g,nc.n=nc.n,dataInS=dataIn,t2=t){
+  t.wilcox.des <- function(nc.g=nc.g,nc.n=nc.n,dataInS=dataIn,t2=t,mean2=mean){
 
-    if(!t2){
+    if(t2==FALSE){
 
     t.wilcox.single <- function(g=nc.g,i,data=dataInS){
       data[,i]=as.numeric(data[,i])
+
       m0=mean(data[,i],na.rm=TRUE)
       s0=sd(data[,i],na.rm=TRUE)
       ms0=paste(round(m0,3),"+/-",round(s0,3),sep="")
       m=aggregate(data[,i],by=list(data[,g]),mean,na.rm=TRUE)
       s=aggregate(data[,i],by=list(data[,g]),sd,na.rm=TRUE)
-      rst.single=paste(round(m[,2],3),"+/-",round(s[,2],3),sep="")
-      shapiro1=shapiro.test(data[,i][data[,g]==levels(data[,g])[1]])
-      shapiro2=shapiro.test(data[,i][data[,g]==levels(data[,g])[2]])
+      des.mean=paste(round(m[,2],3),"+/-",round(s[,2],3),sep="")
+
+      med0=median(data[,i],na.rm=TRUE)
+      qs0=quantile(data[,i],na.rm=TRUE)
+      medq0=paste(round(med0,3),"(",round(qs0[2],3),",",round(qs0[4],3),")")
+      med=aggregate(data[,i],by=list(data[,g]),median,na.rm=TRUE)
+      qs=aggregate(data[,i],by=list(data[,g]),quantile,na.rm=TRUE)
+      des.median=paste(round(med[,2],3),"(",round(qs[,2][,2],3),",",round(qs[,2][,4],3),")")
+
+      if(length((data[,i][data[,g]==levels(data[,g])[1]]))>5000 |
+         length((data[,i][data[,g]==levels(data[,g])[2]]))>5000){
+        shapiro1=ks.test(data[,i][data[,g]==levels(data[,g])[1]],pnorm)
+        shapiro2=ks.test(data[,i][data[,g]==levels(data[,g])[2]],pnorm)
+      }else{
+        shapiro1=shapiro.test(data[,i][data[,g]==levels(data[,g])[1]])
+        shapiro2=shapiro.test(data[,i][data[,g]==levels(data[,g])[2]])
+      }
       shapiro=min(shapiro1$p.value,shapiro2$p.value)
       bartlett=bartlett.test(data[,i]~data[,g])
       if(shapiro<0.1 | bartlett$p.value<0.1){
         temp=wilcox.test(data[,i]~data[,g],exact=FALSE)
         s=c("Wilcoxon test",round(temp$statistic,3))
-        p=round(temp$p.value,3)}
+        p=round(temp$p.value,3)
+        if(mean){rst.single=c(ms0,des.mean,s,p)}else{rst.single=c(medq0,des.median,s,p)}
+        rst.single=data.frame(matrix(rst.single,nrow=1))}
       if(shapiro>=0.1 & bartlett$p.value<0.1){
         temp=t.test(data[,i]~data[,g],var.equal=FALSE)
         s=c("Adjust t test",round(temp$statistic,3))
-        p=round(temp$p.value,3)}
+        p=round(temp$p.value,3)
+        rst.single=c(ms0,des.mean,s,p)
+        rst.single=data.frame(matrix(rst.single,nrow=1))}
       if(shapiro>=0.1 & bartlett$p.value>=0.1){
         temp=t.test(data[,i]~data[,g],var.equal=TRUE)
         s=c("t test",round(temp$statistic,3))
-        p=round(temp$p.value,3)}
-      rst.single=c(ms0,rst.single,s,p)
-      rst.single=data.frame(matrix(rst.single,nrow=1))
+        p=round(temp$p.value,3)
+        rst.single=c(ms0,des.mean,s,p)
+        rst.single=data.frame(matrix(rst.single,nrow=1))}
       names(rst.single)=c("total",levels(data[,nc.g]),"method","statistic","p.value")
       row.names(rst.single)=names(data)[i]
       return(rst.single)
@@ -66,7 +95,6 @@ easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE
 
     }#if(t2)
 
-
     n.rst=t.wilcox.single(i=nc.n[1],data=dataInS)
 
     if(length(nc.n)==1){n.rst=n.rst}else{
@@ -86,6 +114,7 @@ easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE
     names(data)[names(data)=="group"]="group_temp"
 
     if(aov){
+
       aov.single=function(data,i,g){
         data[,g]=as.factor(data[,g])
         data[,i]=as.numeric(data[,i])
@@ -98,28 +127,60 @@ easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE
         p[2]=round(summary(temp)[[1]][1,4],3)
         p[3]=round(summary(temp)[[1]][1,5],3)
         temp=summary(glht(temp,linfct=mcp(group="Tukey")))#Dunnett
-        temp=temp$test[[6]]
-        p[4:(3+choose(length(g.lev),2))]=round(temp,3)
-        p=data.frame(t(p))
-        r.name=NA
-        for(k in 1:(length(g.lev)-1)){r.name=c(r.name,paste(g.lev[k],"_vs_",g.lev[(k+1):length(g.lev)],sep=""))}
-        rownames(p)=c(names(data)[i])
-        colnames(p)=c("method","statistic","p.value",r.name[-1])
+        if(!mcp.stat){
+          temp=temp$test[[6]]
+          p[4:(3+choose(length(g.lev),2))]=round(temp,3)
+          p=data.frame(t(p))
+          r.name=NULL
+          for(k in 1:(length(g.lev)-1)){
+            r.name=c(r.name,paste(g.lev[k],"_vs_",g.lev[(k+1):length(g.lev)],sep=""))
+          }
+          rownames(p)=c(names(data)[i])
+          colnames(p)=c("method","statistic","p.value",r.name)
 
-        m0=mean(data[,i],na.rm=T)
-        s0=sd(data[,i],na.rm=T)
-        ms0=paste(round(m0,3),"+/-",round(s0,3),sep="")
-        m=aggregate(data[,i],by=list(data[,g]),mean,na.rm=TRUE)
-        s=aggregate(data[,i],by=list(data[,g]),sd,na.rm=TRUE)
-        ms=paste(as.matrix(round(m[,-1],3)),"+/-",as.matrix(round(s[,-1],3)),sep="")
-        ms=matrix(ms,byrow=T,nrow=1)
-        des=data.frame(cbind(ms0,ms))
-        names(des)=c("total",levels(data[,g]))
-        rownames(des)=names(data)[i]
+          m0=mean(data[,i],na.rm=T)
+          s0=sd(data[,i],na.rm=T)
+          ms0=paste(round(m0,3),"+/-",round(s0,3),sep="")
+          m=aggregate(data[,i],by=list(data[,g]),mean,na.rm=TRUE)
+          s=aggregate(data[,i],by=list(data[,g]),sd,na.rm=TRUE)
+          ms=paste(as.matrix(round(m[,-1],3)),"+/-",as.matrix(round(s[,-1],3)),sep="")
+          ms=matrix(ms,byrow=T,nrow=1)
+          des=data.frame(cbind(ms0,ms))
+          names(des)=c("total",levels(data[,g]))
+          rownames(des)=names(data)[i]
+          p=cbind(des,p)
 
-        p=cbind(des,p)
+        }
+
+        if(mcp.stat){
+
+          temp.s=temp$test$tstat
+          temp.p=temp$test$pvalues
+          p[4:(3+length(temp.s)+length(temp.p))]=round(c(temp.p,temp.s),3)
+          p=data.frame(t(p))
+          r.name=NULL
+          for(k in 1:(length(g.lev)-1)){
+            r.name=c(r.name,paste(g.lev[k],"_vs_",g.lev[(k+1):length(g.lev)],sep=""))
+          }
+          rownames(p)=c(names(data)[i])
+          colnames(p)=c("method","statistic","p.value",
+                        paste("p.",r.name,sep=""),paste("stat.",r.name,sep=""))
+          m0=mean(data[,i],na.rm=T)
+          s0=sd(data[,i],na.rm=T)
+          ms0=paste(round(m0,3),"+/-",round(s0,3),sep="")
+          m=aggregate(data[,i],by=list(data[,g]),mean,na.rm=TRUE)
+          s=aggregate(data[,i],by=list(data[,g]),sd,na.rm=TRUE)
+          ms=paste(as.matrix(round(m[,-1],3)),"+/-",as.matrix(round(s[,-1],3)),sep="")
+          ms=matrix(ms,byrow=T,nrow=1)
+          des=data.frame(cbind(ms0,ms))
+          names(des)=c("total",levels(data[,g]))
+          rownames(des)=names(data)[i]
+          p=cbind(des,p)
+
+        } #if(mcp.stat)
+
         return(p)
-      }
+      }#aov.single
 
       if(length(j)>1){
         rst=aov.single(data,j[1],g)
@@ -144,38 +205,85 @@ easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE
         g.lev=levels(data[,g])
         p.shapiro=NA
         for(g.num in 1:length(g.lev)){
-          shapiro=shapiro.test(data[,i][data[,g]==g.lev[g.num]])
+          if(length(data[,i][data[,g]==g.lev[g.num]])>5000){
+            shapiro=ks.test(data[,i][data[,g]==g.lev[g.num]])
+          }else{
+            shapiro=shapiro.test(data[,i][data[,g]==g.lev[g.num]])
+          }
           p.shapiro[g.num]=shapiro$p.value
         }
         bartlett=bartlett.test(data[,i]~data[,g])
         p=NA
         model=formula(paste(names(data)[i],"~ group"))
-        if(min(p.shapiro)<0.1 | bartlett$p.value<0.1){
-          temp=kruskal.test(model,data)
-          p[1]="Kruskal-Wallis test"
-          p[2]=round(temp$statistic,3)
-          p[3]=round(temp$p.value,3)
-          temp=posthoc.kruskal.nemenyi.test(x=data[,i],g=data[,g],method="Chisq")#Tukey
-          p.post=as.numeric(temp$p.value)
-          p.post=p.post[!is.na(p.post)]
-          p[4:(3+choose(length(g.lev),2))]=round(p.post,3)
-        }
-        if(min(p.shapiro)>=0.1 &  bartlett$p.value>=0.1){
-          temp=aov(model,data)
-          p[1]="ANOVA"
-          p[2]=round(summary(temp)[[1]][1,4],3)
-          p[3]=round(summary(temp)[[1]][1,5],3)
-          temp=summary(glht(temp,linfct=mcp(group="Tukey")))#Dunnett
-          temp=temp$test[[6]]
-          p[4:(3+choose(length(g.lev),2))]=round(temp,3)
-        }
-        p=data.frame(t(p))
-        r.name=NA
-        for(k in 1:(length(g.lev)-1)){r.name=c(r.name,paste(g.lev[k],"_vs_",g.lev[(k+1):length(g.lev)],sep=""))}
-        rownames(p)=c(names(data)[i])
-        colnames(p)=c("method","statistic","p.value",r.name[-1])
+        if(!mcp.stat){
 
-        if(p[1]=="Kruskal-Wallis test"){
+          if(min(p.shapiro)<0.1 | bartlett$p.value<0.1){
+            temp=kruskal.test(model,data)
+            p[1]="Kruskal-Wallis test"
+            p[2]=round(temp$statistic,3)
+            p[3]=round(temp$p.value,3)
+            temp=kwAllPairsNemenyiTest(x=data[,i],g=data[,g],method="Chisq")#Tukey
+            temp.p=as.numeric(temp$p.value)
+            temp.p=temp.p[!is.na(temp.p)]
+            p[4:(3+choose(length(g.lev),2))]=round(temp.p,3)
+          } #if(min(p.shapiro)<0.1 | bartlett$p.value<0.1)
+
+          if(min(p.shapiro)>=0.1 &  bartlett$p.value>=0.1){
+            temp=aov(model,data)
+            p[1]="ANOVA"
+            p[2]=round(summary(temp)[[1]][1,4],3)
+            p[3]=round(summary(temp)[[1]][1,5],3)
+            temp=summary(glht(temp,linfct=mcp(group="Tukey")))#Dunnett
+            temp.p=temp$test[[6]]
+            p[4:(3+choose(length(g.lev),2))]=round(temp.p,3)
+          }#if(min(p.shapiro)>=0.1 &  bartlett$p.value>=0.1){
+
+          p=data.frame(t(p))
+          r.name=NULL
+          for(k in 1:(length(g.lev)-1)){r.name=c(r.name,paste(g.lev[k],"_vs_",g.lev[(k+1):length(g.lev)],sep=""))}
+          rownames(p)=c(names(data)[i])
+          colnames(p)=c("method","statistic","p.value",r.name)
+
+        }
+
+        if(mcp.stat){
+
+          if(min(p.shapiro)<0.1 | bartlett$p.value<0.1){
+            temp=kruskal.test(model,data)
+            p[1]="Kruskal-Wallis test"
+            p[2]=round(temp$statistic,3)
+            p[3]=round(temp$p.value,3)
+            temp=kwAllPairsNemenyiTest(x=data[,i],g=data[,g],method="Chisq")#Tukey
+            temp.s=as.numeric(temp$statistic)
+            temp.p=as.numeric(temp$p.value)
+            temp.s=temp.s[!is.na(temp.s)]
+            temp.p=temp.p[!is.na(temp.p)]
+            p[4:(3+length(temp.s)+length(temp.p))]=round(c(temp.p,temp.s),3)
+          } #if(min(p.shapiro)<0.1 | bartlett$p.value<0.1)
+
+          if(min(p.shapiro)>=0.1 &  bartlett$p.value>=0.1){
+            temp=aov(model,data)
+            p[1]="ANOVA"
+            p[2]=round(summary(temp)[[1]][1,4],3)
+            p[3]=round(summary(temp)[[1]][1,5],3)
+            temp=summary(glht(temp,linfct=mcp(group="Tukey")))#Dunnett
+            temp.s=temp$test$tstat
+            temp.p=temp$test$pvalues
+            p[4:(3+length(temp.s)+length(temp.p))]=round(c(temp.p,temp.s),3)
+          } #if(min(p.shapiro)>=0.1 &  bartlett$p.value>=0.1)
+
+          p=data.frame(t(p))
+          r.name=NULL
+          for(k in 1:(length(g.lev)-1)){
+            r.name=c(r.name,paste(g.lev[k],"_vs_",g.lev[(k+1):length(g.lev)],sep=""))
+          }
+          rownames(p)=c(names(data)[i])
+          colnames(p)=c("method","statistic","p.value",
+                        paste("p.",r.name,sep=""),paste("stat.",r.name,sep=""))
+
+        } #if(mcp.stat)
+
+        if(p[1]=="Kruskal-Wallis test" & !mean){
           q0=quantile(data[,i],na.rm=T)
           qr0=paste(round(q0[3],3),"(",round(q0[2],3),",",round(q0[4],3),")",
                     sep="")
@@ -187,7 +295,7 @@ easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE
           names(des)=c("total",levels(data[,g]))
           rownames(des)=names(data)[i]
         }
-        if(p[1]=="ANOVA"){
+        if(p[1]=="ANOVA" | mean){
           m0=mean(data[,i],na.rm=T)
           s0=sd(data[,i],na.rm=T)
           ms0=paste(round(m0,3),"+/-",round(s0,3),sep="")
@@ -219,20 +327,22 @@ easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE
   ## function of factor variables from two or more groups ##
   ##########################################################
 
-  fisher.des=function(nc.g=nc.g,nc.f=nc.f,dataInS=dataIn,ftestS=fisher,digit.p2=digit.p){
+  fisher.des=function(nc.g=nc.g,nc.f=nc.f,dataInS=dataIn,ftestS=fisher){
 
-    fisher.des.single=function(g=nc.g,i,data=dataInS,test=ftestS,digit.p3=digit.p2){
+    fisher.des.single=function(g=nc.g,i,data=dataInS,test=ftestS){
       data[,g]=as.factor(data[,g])
       data[,i]=as.factor(data[,i])
       t=table(data[,i])
       p=prop.table(t)
-      p=round(p*10^digit.p3,2)
+      p=round(p*100,2)
       rst0=paste(t," (",p,")",sep="")
       t=table(data[,i],data[,g])
       p=prop.table(t,2)
-      p=round(p*10^digit.p3,2)
+      p=round(p*100,2)
       rst=data.frame(matrix(paste(t," (",p,")",sep=""),ncol=length(levels(data[,g]))))
+
       if(test){
+
         fisher=fisher.test(t)
         p=round(fisher$p.value,3)
         method=c("Fisher test",rep(NA,nrow(t)-1))
@@ -250,16 +360,29 @@ easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE
           for(j in seq(ncol(pairwiseComb))){
             tempCol1=pairwiseComb[1,j]
             tempCol2=pairwiseComb[2,j]
-            cols=c(tempCol1, tempCol2)
+            cols=c(tempCol1,tempCol2)
             tempMat=rbind(t[,cols])
             tempFisher=fisher.test(tempMat,alternative="two.sided")
             results[1,colnames(results)[j]]=tempFisher$p.value
           }#for(j in seq(ncol(pairwiseComb)))
           results[1,]=round(p.adjust(results[1,],method="fdr"),3)
-          rst=cbind(rst,results)
-        }#if(length(levels(data[,g]))>2)
 
-      }#if(test)
+          if(!mcp.stat){
+            rst=cbind(rst,results)
+          }
+
+          if(mcp.stat){
+            s.results=results
+            s.results[1,]=NA
+            colnames(s.results)=paste("stat.",colnames(results),sep="")
+            colnames(results)=paste("p.",colnames(results),sep="")
+            rst=cbind(rst,results,s.results)
+          }
+
+        } #if(length(levels(data[,g]))>2)
+
+      } #if(test)
+
       if(!test){
         chisq=chisq.test(t)
         p=round(chisq$p.value,3)
@@ -273,8 +396,11 @@ easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE
         if(length(levels(data[,g]))>2){
           pairwiseComb=combn(levels(data[,g]),2)
           results=matrix(NA,ncol=ncol(pairwiseComb),nrow=nrow(t))
+          s.results=matrix(NA,ncol=ncol(pairwiseComb),nrow=nrow(t))
           rownames(results)=rownames(rst)
+          rownames(s.results)=rownames(rst)
           colnames(results)=apply(pairwiseComb,2,function(x){paste(x[1],"_vs_",x[2],sep="")})
+          colnames(s.results)=apply(pairwiseComb,2,function(x){paste(x[1],"_vs_",x[2],sep="")})
           for(j in seq(ncol(pairwiseComb))){
             tempCol1 <- pairwiseComb[1,j]
             tempCol2 <- pairwiseComb[2,j]
@@ -282,14 +408,26 @@ easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE
             tempMat=rbind(t[,cols])
             tempChisq=chisq.test(tempMat)
             results[1,colnames(results)[j]] <- tempChisq$p.value
+            s.results[1,colnames(s.results)[j]] <- tempChisq$statistic
           }#for(j in seq(ncol(pairwiseComb)))
           results[1,]=round(p.adjust(results[1,], method="fdr"),3)
-          rst=cbind(rst,results)
+          s.results[1,]=round(s.results[1,],3)
+
+          if(!mcp.stat){
+            rst=cbind(rst,results)
+          }
+
+          if(mcp.stat){
+            colnames(s.results)=paste("stat.",colnames(s.results),sep="")
+            colnames(results)=paste("p.",colnames(results),sep="")
+            rst=cbind(rst,results,s.results)
+          }
+
         }#if(length(levels(data[,g]))>2)
 
       }#if(!test)
       return(rst)
-    }#fisher.des.single
+    } #fisher.des.single
 
     f.rst=fisher.des.single(g=nc.g,i=nc.f[1],data=dataInS,test=ftestS)
 
@@ -300,7 +438,7 @@ easyDes=function(nc.g=NULL,nc.n=NULL,nc.f=NULL,dataIn=data,fisher=TRUE,aov=FALSE
     }
     for(i in 1:ncol(f.rst)){f.rst[,i]=as.character(f.rst[,i])}
     return(f.rst)
-  }
+  } #fisher.des=function()
 
   ###################
   ## main function ##

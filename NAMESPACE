@@ -1,7 +1,8 @@
 exportPattern("^[[:alpha:]]+")
 importFrom("multcomp", "glht","mcp")
-importFrom("PMCMR", "posthoc.kruskal.nemenyi.test")
+importFrom("PMCMRplus", "kwAllPairsNemenyiTest")
 importFrom("stats", "aggregate", "bartlett.test", "chisq.test",
            "fisher.test", "formula", "kruskal.test", "p.adjust",
-           "quantile", "sd", "shapiro.test", "t.test", "wilcox.test")
+           "quantile", "sd", "shapiro.test", "t.test", "wilcox.test",
+           "median", "ks.test", "pnorm")
 importFrom("utils", "combn", "data")
