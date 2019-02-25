@@ -11,12 +11,13 @@
 }
 \keyword{Descriptive analysis}
 \usage{
-easyDes(nc.g,nc.n,nc.f,dataIn,fisher,aov,t,mean,mcp.stat)
+easyDes(nc.g,nc.n,nc.f,nc.of,dataIn,fisher,aov,t,mean,mcp.stat)
 }
 \arguments{
   \item{nc.g}{integer, the column number of the grouping variable, length of 'nc.g' must be 1}
   \item{nc.n}{numeric vector, the column number of the numeric variable, length of 'nc.n' can be more than 1}
-  \item{nc.f}{numeric vector, the column number of the factor variable, length of 'nc.n' can be more than 1}
+  \item{nc.f}{numeric vector, the column number of the factor variable, length of 'nc.f' can be more than 1}
+  \item{nc.of}{numeric vector, the column number of the ordinal factor variable, length of 'nc.of' can be more than 1}
   \item{dataIn}{data frame including variables above}
   \item{fisher}{logic, whether to apply Fisher test by force, the default is 'TRUE'}
   \item{aov}{logic, whether to apply ANOVA test by force, the default is 'FALSE'}
@@ -56,6 +57,8 @@ Version 2.0: 1. T test can be forced to apply.
 Version 3.0: 1. Fixing the wrong colnames in Chi-squre test. 2. Limiting the number of the decimal digits of the statistic in Chi-squre test to three. 3. The number of decimal digits of the propotion for the factor variables can be set free.
 
 Version 4.0: 1. Mean and standard deviation can be forced to display. 2. The help document has been revised. 3. Fixing the problem with more than 5,000 samples in the normality test.
+
+Version 5.0: 1. Unify the number of decimal digits (i.e., output "0.010" rather than "0.01" for p value). 2. Add the 'nc.of' to analyze ordinal factors.
 }
 \examples{
 group=rep(c(0,1),each=30)
@@ -63,13 +66,14 @@ nx1=rnorm(60)
 nx2=rnorm(60)
 fx1=rep(c(1:3),20)
 fx2=rep(c(1:5),12)
-data=data.frame(group,nx1,nx2,fx1,fx2)
+fx3=factor(fx2)
+data=data.frame(group,nx1,nx2,fx1,fx2,fx3)
 
-easyDes(nc.g=1,nc.n=2:3,nc.f=4:5,dataIn=data,
-  fisher=TRUE,aov=FALSE,t=FALSE,mean=FALSE,mcp.stat=FALSE)
-easyDes(nc.g=4,nc.n=2:3,nc.f=c(5,5),dataIn=data,
-  fisher=TRUE,aov=FALSE,t=FALSE,mean=FALSE,mcp.stat=FALSE)
-easyDes(nc.g=4,nc.n=3,nc.f=5,dataIn=data,
-  fisher=TRUE,aov=FALSE,t=FALSE,mean=FALSE,mcp.stat=TRUE)
+easyDes(nc.g=1,nc.n=2:3,nc.f=4:5,nc.of=6,dataIn=data,
+        fisher=TRUE,aov=FALSE,t=FALSE,mean=FALSE,mcp.stat=FALSE)
+easyDes(nc.g=4,nc.n=2:3,nc.f=c(5,5),nc.of=6,dataIn=data,
+        fisher=TRUE,aov=FALSE,t=FALSE,mean=FALSE,mcp.stat=FALSE)
+easyDes(nc.g=4,nc.n=3,nc.f=5,nc.of=6,dataIn=data,
+        fisher=TRUE,aov=FALSE,t=FALSE,mean=FALSE,mcp.stat=TRUE)
 }
 
