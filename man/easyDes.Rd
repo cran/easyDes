@@ -11,7 +11,9 @@
 }
 \keyword{Descriptive analysis}
 \usage{
-easyDes(nc.g,nc.n,nc.f,nc.of,dataIn,fisher,aov,t,mean,mcp.stat)
+easyDes(nc.g,nc.n,nc.f,nc.of,dataIn,fisher,aov,t,mean,
+    mcp.test.method,mcp.stat,mcp.t.test,mcp.t.test.method,
+    table.margin,decimal.p,decimal.prop)
 }
 \arguments{
   \item{nc.g}{integer, the column number of the grouping variable, length of 'nc.g' must be 1}
@@ -23,7 +25,13 @@ easyDes(nc.g,nc.n,nc.f,nc.of,dataIn,fisher,aov,t,mean,mcp.stat)
   \item{aov}{logic, whether to apply ANOVA test by force, the default is 'FALSE'}
   \item{t}{logic, whether to apply T test by force, the default is 'FALSE'}
   \item{mean}{logic, whether to disply the mean and standar deviation for the numeric variables by force, the default is 'FALSE'}
-  \item{mcp.stat}{logic, whether to display the statistic for the multiple comparsion}
+  \item{mcp.test.method}{character, specific for ANOVA, the method for the multiple comparisons in 'multcomp' package, 'Tukey' or 'Dunnett'}
+  \item{mcp.stat}{logic, whether to display the statistic for the multiple comparsions}
+  \item{mcp.t.test}{logic, specific for ANOVA, wether to use the pairwise t tests as the multiple comparsions instead of that in 'multcomp' package}
+  \item{mcp.t.test.method}{character, specific for 'mcp.t.test'==TRUE, the method for the pairwise t tests, 'holm' (Holm, 1979), 'hochberg' (Hochberg, 1988), 'hommel' (Hommel, 1988), 'bonferroni', 'BH' (Benjamini & Hochberg, 1995), 'BY' (Benjamini & Yekutieli, 2001), 'fdr', 'none'}
+  \item{table.margin}{1 or 2, which margin of the table should be calculated the proportion, 1=row, 2=column}
+  \item{decimal.p}{integer, the number of decimals of the p value}
+  \item{decimal.prop}{integer, the number of decimals of the proportions for factor variables}
 }
 \value{
   \item{total}{the descriptive statistic for all data}
@@ -56,9 +64,12 @@ Version 2.0: 1. T test can be forced to apply.
 
 Version 3.0: 1. Fixing the wrong colnames in Chi-squre test. 2. Limiting the number of the decimal digits of the statistic in Chi-squre test to three. 3. The number of decimal digits of the propotion for the factor variables can be set free.
 
-Version 4.0: 1. Mean and standard deviation can be forced to display. 2. The help document has been revised. 3. Fixing the problem with more than 5,000 samples in the normality test.
+Version 4.0: 1. Mean and standard deviation can be forced to display. 2. The help document has been revised. 3. Fix the problem with more than 5,000 samples in the normality test.
 
 Version 5.0: 1. Unify the number of decimal digits (i.e., output "0.010" rather than "0.01" for p value). 2. Add the 'nc.of' to analyze ordinal factors.
+
+Version 6.0: 1. Add the pairwise t tests for the the multiple comparsions. 2. Fix the error of "Increase workspace or consider using 'simulate.p.value=TRUE'" in fisher test. 3. Add the 'table.margin' argument. 4. Add the 'decimal.p' argment. 5. Fix the bugs caused by the names with specific characters in numeric variables.
+
 }
 \examples{
 group=rep(c(0,1),each=30)

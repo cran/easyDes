@@ -4,5 +4,5 @@ importFrom("PMCMRplus", "kwAllPairsNemenyiTest")
 importFrom("stats", "aggregate", "bartlett.test", "chisq.test",
            "fisher.test", "formula", "kruskal.test", "p.adjust",
            "quantile", "sd", "shapiro.test", "t.test", "wilcox.test",
-           "median", "ks.test", "pnorm")
+           "median", "ks.test", "pnorm","pairwise.t.test")
 importFrom("utils", "combn", "data")
